@@ -12,11 +12,11 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="./falldetection-b32b2-firebase-adm
 # imageBlob.upload_from_filename(imagePath)
 
 
-from google.cloud import storage
-storage_client = storage.Client()
-bucket = storage_client.bucket("images")
-blob = bucket.blob("cat.jpg")
-blob.upload_from_filename("cat.jpg")
+# from google.cloud import storage
+# storage_client = storage.Client()
+# bucket = storage_client.bucket("images")
+# blob = bucket.blob("cat.jpg")
+# blob.upload_from_filename("cat.jpg")
 
 
 # from google.cloud import storage
@@ -48,3 +48,29 @@ blob.upload_from_filename("cat.jpg")
 # imagePath = "./cat.jpg"  # Replace with your own path
 # imageBlob = bucket.blob("image1.jpg")
 # imageBlob.upload_from_filename(imagePath)
+firebase_app = None
+PROJECT_ID = "falldetection-b32b2"
+
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import storage
+
+cred = credentials.Certificate('falldetection-b32b2-firebase-adminsdk-jjkd0-957adad3ce.json')
+
+
+firebase_app = firebase_admin.initialize_app(cred, {
+        # 'projectId': PROJECT_ID,
+        'storageBucket': f"{PROJECT_ID}.appspot.com"
+    })
+
+def uploadToFirebase(fileName):
+    bucket = storage.bucket()
+    imageBlob = bucket.blob("/")
+    imagePath = fileName
+    imageBlob = bucket.blob(fileName)
+    imageBlob.upload_from_filename(imagePath)
+
+    imageBlob.make_public()
+    print('********************************* FIREBASE LINK ************************')
+    print(imageBlob.public_url)
+    return imageBlob.public_url

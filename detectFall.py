@@ -19,20 +19,14 @@ def detect(foot, knee, hip, shoulder):
         return False
 
 
-fallType = {
-    "FROM_KNEE": 0,
-    "FULL": 1,
-}
-
-
 def detectFallType(foot, knee, hip, shoulder):
-  
+
     difKneeHip = knee - hip
     if(difKneeHip <= 25):
         print('completely fallen')
-        sendPN('completely fallen')
-        return 0
+        # sendPN('completely fallen')
+        return 'completely fallen'
     else:
         print('fallen from knee')
-        sendPN('fallen from knee')
-        return 1
+        # sendPN('fallen from knee')
+        return 'fallen from knee'

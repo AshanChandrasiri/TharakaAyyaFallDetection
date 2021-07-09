@@ -1,3 +1,6 @@
+from datetime import datetime
+from uploadToFirebase import uploadToFirebase
+from push_notification_body import PushNotificationBody
 from sendNotification import sendPN
 import time
 import _thread
@@ -7,6 +10,7 @@ import cv2
 import mediapipe as mp
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
+import time
 
 # # For static images:
 # IMAGE_FILES = []
@@ -42,19 +46,37 @@ mp_pose = mp.solutions.pose
 forceSkip = True
 
 
+def saveImage():
+    # filename = f'{str(datetime.now())}.jpg'
+    filename = f'{time.strftime("%Y%m%d-%H%M%S")}.jpg'
+    cv2.imwrite(filename, originalImage)
+    return filename
+
+
 def detectFallenType(threadName, delay):
     time.sleep(delay)
     print('*************************************** TREAD stared ******************************')
-    detectFallType(foot=footHeight, knee=kneeHeight,
-                   hip=hipsHeight, shoulder=shoulderHeight)
+    fallType = detectFallType(foot=footHeight, knee=kneeHeight,
+                              hip=hipsHeight, shoulder=shoulderHeight)
+    filename = saveImage()
+
+    firebaseLink = uploadToFirebase(filename)
+
+    body = PushNotificationBody(type=fallType, imageUrl=firebaseLink)
+    sendPN(body)
+
+
+    print('--------------------- FINAL RESULTS ------------------------------')
+    print(f'---------------------FALL TYPE : {fallType} ')
+    print(f'---------------------Uploaded image : {firebaseLink} ')
 
     cv2.imshow('after 2 seconds', image)
     cv2.waitKey(5000)
 
 
-# sendPN('hi')      
+# sendPN('hi')
 
-cap = cv2.VideoCapture('3.mp4')
+cap = cv2.VideoCapture('2.mp4')
 with mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5) as pose:
@@ -63,11 +85,12 @@ with mp_pose.Pose(
         if not success:
             print("Ignoring empty camera frame.")
             # If loading a video, use 'break' instead of 'continue'.
-            # cap.release()
+            cap.release()
             continue
 
         # Flip the image horizontally for a later selfie-view display, and convert
         # the BGR image to RGB.
+        originalImage = image
         image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
         image_height, image_width, _ = image.shape
         # To improve performance, optionally mark the image as not writeable to
@@ -97,7 +120,6 @@ with mp_pose.Pose(
         isFall = detect(foot=footHeight, knee=kneeHeight,
                         hip=hipsHeight, shoulder=shoulderHeight)
 
-        
         if(forceSkip & isFall):
             forceSkip = False
             cv2.imshow('1st detection', image)
@@ -132,4 +154,3 @@ with mp_pose.Pose(
         cv2.imshow('MediaPipe Pose', image)
         if cv2.waitKey(5) & 0xFF == 27:
             break
-
