@@ -1,0 +1,3 @@
+pip install google-cloud-storage
+pip install --upgrade gcloud
+pip install firebase
