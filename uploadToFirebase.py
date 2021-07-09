@@ -1,7 +1,7 @@
-from google.cloud import storage
-from firebase import firebase
-import os
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="./falldetection-b32b2-firebase-adminsdk-jjkd0-957adad3ce.json"
+# from google.cloud import storage
+# from firebase import firebase
+# import os
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="./falldetection-b32b2-firebase-adminsdk-jjkd0-957adad3ce.json"
 # firebase = firebase.FirebaseApplication('<your firebase database path>')
 # client = storage.Client()
 # bucket = client.get_bucket('images')
