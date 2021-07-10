@@ -76,7 +76,7 @@ def detectFallenType(threadName, delay):
 
 # sendPN('hi')
 
-cap = cv2.VideoCapture('2.mp4')
+cap = cv2.VideoCapture('5.mp4')
 with mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5) as pose:
