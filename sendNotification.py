@@ -21,7 +21,10 @@ def sendPN(body):
         'to':
         deviceToken,
             'priority': 'high',
-        # 'data': json.dumps(body.__dict__),
+        'data': {
+            'type' : body.type,
+            'image': body.imageUrl
+        },
     }
     response = requests.post(
         "https://fcm.googleapis.com/fcm/send", headers=headers, data=json.dumps(body))
