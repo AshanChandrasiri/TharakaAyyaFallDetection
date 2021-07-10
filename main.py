@@ -10,7 +10,6 @@ import cv2
 import mediapipe as mp
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
-import time
 
 # # For static images:
 # IMAGE_FILES = []
@@ -65,7 +64,6 @@ def detectFallenType(threadName, delay):
     body = PushNotificationBody(type=fallType, imageUrl=firebaseLink)
     sendPN(body)
 
-
     print('--------------------- FINAL RESULTS ------------------------------')
     print(f'---------------------FALL TYPE : {fallType} ')
     print(f'---------------------Uploaded image : {firebaseLink} ')
@@ -76,7 +74,7 @@ def detectFallenType(threadName, delay):
 
 # sendPN('hi')
 
-cap = cv2.VideoCapture('2.mp4')
+cap = cv2.VideoCapture('4.mp4')
 with mp_pose.Pose(
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5) as pose:
