@@ -81,7 +81,7 @@ def detectFallenType(threadName, delay):
 
 # sendPN('hi')
 
-cap = cv2.VideoCapture('28.mp4')
+cap = cv2.VideoCapture('34.mp4')
 with mp_pose.Pose(
         min_detection_confidence=0.5, 
         min_tracking_confidence=0.5) as pose:
@@ -122,8 +122,9 @@ with mp_pose.Pose(
             shoulderHeight = calcShoulderHeights(
                 results=results, image_height=image_height)
             
-            
-            
+            current_person_height=footHeight-shoulderHeight;
+            if(personHeight-current_person_height<10 ):
+                forceSkip=True
             
             
             if(initialPersonHeight==False):

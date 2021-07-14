@@ -15,8 +15,8 @@ def sendPN(body):
     }
 
     body = {
-        'notification': {'title': 'Alert !!',
-                         'body': body.type
+        'notification': {'title': 'Fall Detected!',
+                         'body': "Open for more details"
                          },
         'to':
         deviceToken,
