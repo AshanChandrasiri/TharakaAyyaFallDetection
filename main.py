@@ -10,7 +10,6 @@ import cv2
 import mediapipe as mp
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
-import time
 
 # # For static images:
 # IMAGE_FILES = []
@@ -44,6 +43,13 @@ import time
 # For webcam input:
 
 forceSkip = True
+isInitialToePosition = False
+previousToePosition = 0.0
+kneeToToe = 0.0
+index=1
+isSleepMode=False
+personHeight=0.0
+initialPersonHeight=False
 
 
 def saveImage():
@@ -65,20 +71,19 @@ def detectFallenType(threadName, delay):
     body = PushNotificationBody(type=fallType, imageUrl=firebaseLink)
     sendPN(body)
 
-
     print('--------------------- FINAL RESULTS ------------------------------')
     print(f'---------------------FALL TYPE : {fallType} ')
     print(f'---------------------Uploaded image : {firebaseLink} ')
-
-    cv2.imshow('after 2 seconds', image)
-    cv2.waitKey(5000)
+    time.sleep(3000)
+    # cv2.imshow('after 2 seconds', image)
+    # cv2.waitKey(5000)
 
 
 # sendPN('hi')
 
-cap = cv2.VideoCapture('5.mp4')
+cap = cv2.VideoCapture('28.mp4')
 with mp_pose.Pose(
-        min_detection_confidence=0.5,
+        min_detection_confidence=0.5, 
         min_tracking_confidence=0.5) as pose:
     while cap.isOpened():
         success, image = cap.read()
@@ -101,51 +106,101 @@ with mp_pose.Pose(
         # Draw the pose annotation on the image.
         image.flags.writeable = True
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        try:
+            mp_drawing.draw_landmarks(
+                image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
 
-        mp_drawing.draw_landmarks(
-            image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+            footHeight = calcFootHeights(
+                results=results, image_height=image_height)
+            
+            kneeHeight = calcKneeHeights(
+                results=results, image_height=image_height)
 
-        footHeight = calcFootHeights(
-            results=results, image_height=image_height)
+            hipsHeight = calcHipsHeights(
+                results=results, image_height=image_height)
 
-        kneeHeight = calcKneeHeights(
-            results=results, image_height=image_height)
+            shoulderHeight = calcShoulderHeights(
+                results=results, image_height=image_height)
+            
+            
+            
+            
+            
+            if(initialPersonHeight==False):
+                personHeight=footHeight-shoulderHeight
 
-        hipsHeight = calcHipsHeights(
-            results=results, image_height=image_height)
+            if(isInitialToePosition==False and personHeight>150):
+                previousToePosition=image_height-footHeight
+                kneeToToe = footHeight-kneeHeight
+                initialPersonHeight = True
+                isInitialToePosition=True
 
-        shoulderHeight = calcShoulderHeights(
-            results=results, image_height=image_height)
+            if(index%5==0):
+                previousToePosition=image_height-footHeight
+                index=index+1
 
-        isFall = detect(foot=footHeight, knee=kneeHeight,
-                        hip=hipsHeight, shoulder=shoulderHeight)
+            toePositionDistance = (image_height-footHeight)-previousToePosition
 
-        if(forceSkip & isFall):
-            forceSkip = False
-            cv2.imshow('1st detection', image)
-            print(' /////////// first call after detect /////////////////')
+            
+            if(kneeToToe-toePositionDistance<10 and personHeight>150):
+                print("i am sleeeeeeeeeeeeeeepingggg")
+                isSleepMode=True
+            elif(personHeight>150):
+                isSleepMode=False
+            
+            # if(isSleepMode==False):
+                # print("++++++++++++++++++++++++++++++++++++++++++++")
+                # print("previous toe position")
+                # print(previousToePosition)
+                
+                # print("current toe position")
+                # print(image_height-footHeight)
+                
 
-            # Create two threads as follows
-            try:
-                _thread.start_new_thread(detectFallenType, ("Thread-1", 2, ))
+                
+                # print("distance toe position")
+                # print(toePositionDistance)
+                # print("knee height")
+                # print(kneeToToe)
+                # print("person height")
+                # print(personHeight)
+            
 
-            except:
-                print("Error: unable to start thread")
+            
+            if(isSleepMode==False and personHeight>150):
+                isFall = detect(foot=footHeight, knee=kneeHeight,
+                            hip=hipsHeight, shoulder=shoulderHeight)
+                
 
-        print(
-            f'Foot coordinates: ('
-            f'{ footHeight}, '
-            '---- knee---- '
-            f'{kneeHeight})'
+            if(forceSkip & isFall):
+                
 
-            '---- hips---- '
-            f'{hipsHeight})'
+                forceSkip = False
+                cv2.imshow('1st detection', image)
+                print(' /////////// first call after detect /////////////////')
 
-            '---- shoulder---- '
-            f'{shoulderHeight})'
+                # Create two threads as follows
+                try:
+                    _thread.start_new_thread(detectFallenType, ("Thread-1", 2, ))
 
-        )
+                except:
+                    print("Error: unable to start thread")
 
+            # print(
+            #     f'Foot coordinates: ('
+            #     f'{ footHeight}, '
+            #     '---- knee---- '
+            #     f'{kneeHeight})'
+
+            #     '---- hips---- '
+            #     f'{hipsHeight})'
+
+            #     '---- shoulder---- '
+            #     f'{shoulderHeight})'
+
+            # )
+        except:
+            print('skipped image')
         # print(
         #     f'Eye coordinates: ('
         #     f'{ round(results.pose_landmarks.landmark[6].x, 2) * image_width}, '
