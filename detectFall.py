@@ -22,11 +22,18 @@ def detect(foot, knee, hip, shoulder):
 def detectFallType(foot, knee, hip, shoulder):
 
     difKneeHip = knee - hip
+
+    if(difKneeHip<-20):
+        print('Fallen on back')
+        return 'Sitting Position'
+        # sendPN('completely fallen')
+
+
     if(difKneeHip <= 25):
         print('completely fallen')
         # sendPN('completely fallen')
-        return 'completely fallen'
+        return 'Lying Position'
     else:
         print('fallen from knee')
         # sendPN('fallen from knee')
-        return 'fallen from knee'
+        return 'Kneel Position'
