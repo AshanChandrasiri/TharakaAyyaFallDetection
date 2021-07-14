@@ -1,22 +1,23 @@
-from pykinect2 import PyKinectV2
-from pykinect2.PyKinectV2 import *
-from pykinect2 import PyKinectRuntime
-import numpy as np
-import cv2
+import pygame.camera
 
-kinect = PyKinectRuntime.PyKinectRuntime(PyKinectV2.FrameSourceTypes_Infrared)
+pygame.init()
+pygame.camera.init()
+cam_list = pygame.camera.list_cameras()
+cam = None
+if cam_list:
+    cam = pygame.camera.Camera(cam_list[0], (640, 480))
+    cam.start()
 
-while True:
-    # --- Getting frames and drawing
-    if kinect.has_new_infrared_frame():
-        frame = kinect.get_last_infrared_frame()
-        frame = frame.astype(np.uint8)
-        frame = np.reshape(frame, (424, 512))
-        img = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-        output = cv2.bilateralFilter(img, 9, 150, 75)
-        print(output)
-        cv2.imshow('KINECT Video Stream', output)
-        frame = None
+window_surface = pygame.display.set_mode((640, 480))
 
-    key = cv2.waitKey(1)
-    if key == 27: break
+is_running = True
+while is_running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            is_running = False
+
+    if cam is not None:
+        image = cam.get_image()
+        window_surface.blit(image, (0, 0))
+
+    pygame.display.update()
