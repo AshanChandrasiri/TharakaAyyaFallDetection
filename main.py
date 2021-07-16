@@ -7,9 +7,11 @@ import _thread
 from detectFall import detect, detectFallType
 from distanceCalculator import calcFootHeights, calcHipsHeights, calcKneeHeights, calcShoulderHeights
 import cv2
+import matplotlib.pyplot as plt
 import mediapipe as mp
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
+
 
 # # For static images:
 # IMAGE_FILES = []
@@ -46,11 +48,17 @@ forceSkip = True
 isInitialToePosition = False
 previousToePosition = 0.0
 kneeToToe = 0.0
-index=1
+index=0
 isSleepMode=False
 personHeight=0.0
 initialPersonHeight=False
+kneePositions = []
+toePositions = []
+hipPositions = []
+shoulderPositions = []
+indexes = []
 
+thresholdSleepLimit=0.0
 
 def saveImage():
     # filename = f'{str(datetime.now())}.jpg'
@@ -63,7 +71,8 @@ def detectFallenType(threadName, delay):
     time.sleep(delay)
     print('*************************************** TREAD stared ******************************')
     fallType = detectFallType(foot=footHeight, knee=kneeHeight,
-                              hip=hipsHeight, shoulder=shoulderHeight)
+                              hip=hipsHeight, shoulder=shoulderHeight,index=index)
+    # plt.vlines(x = index,colors = 'purple', label = 'fall detected')
     filename = saveImage()
 
     firebaseLink = uploadToFirebase(filename)
@@ -80,15 +89,25 @@ def detectFallenType(threadName, delay):
 
 
 # sendPN('hi')
-
-cap = cv2.VideoCapture('34.mp4')
+# plt.axis([-500, 500, -100, 100])
+cap = cv2.VideoCapture('18.mp4')
 with mp_pose.Pose(
         min_detection_confidence=0.5, 
         min_tracking_confidence=0.5) as pose:
     while cap.isOpened():
         success, image = cap.read()
         if not success:
+            print(len(kneePositions))
+            print(len(indexes))
+            print(len(toePositions))
             print("Ignoring empty camera frame.")
+            plt.plot(indexes, kneePositions)
+            plt.plot(indexes, toePositions)
+            plt.xlabel('Frame Index')
+            plt.ylabel('Vertical Height')
+            plt.show()
+            # plt.plot(index, footHeight, label = "Toe")
+            # plt.show()
             # If loading a video, use 'break' instead of 'continue'.
             cap.release()
             continue
@@ -98,6 +117,7 @@ with mp_pose.Pose(
         originalImage = image
         image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
         image_height, image_width, _ = image.shape
+        thresholdSleepLimit = image_height*0.8
         # To improve performance, optionally mark the image as not writeable to
         # pass by reference.
         image.flags.writeable = False
@@ -122,7 +142,14 @@ with mp_pose.Pose(
             shoulderHeight = calcShoulderHeights(
                 results=results, image_height=image_height)
             
-            current_person_height=footHeight-shoulderHeight;
+            # # plot lines
+            indexes.insert(index,index)
+            kneePositions.insert(index,image_height-(kneeHeight-footHeight))
+            toePositions.insert(index,image_height-(hipsHeight- footHeight))
+            # hipPositions.insert(index,image_height-hipsHeight)
+            # shoulderPositions.insert(index,image_height-shoulderHeight)
+            index = index+1
+            current_person_height=footHeight-shoulderHeight
             if(personHeight-current_person_height<10 ):
                 forceSkip=True
             
@@ -130,24 +157,39 @@ with mp_pose.Pose(
             if(initialPersonHeight==False):
                 personHeight=footHeight-shoulderHeight
 
-            if(isInitialToePosition==False and personHeight>150):
-                previousToePosition=image_height-footHeight
-                kneeToToe = footHeight-kneeHeight
-                initialPersonHeight = True
-                isInitialToePosition=True
+            if(personHeight>100):
+                initialPersonHeight=True
 
-            if(index%5==0):
-                previousToePosition=image_height-footHeight
-                index=index+1
+            # if(isInitialToePosition==False and personHeight>150):
+            #     previousToePosition=image_height-footHeight
+            #     kneeToToe = footHeight-kneeHeight
+            #     initialPersonHeight = True
+            #     isInitialToePosition=True
 
-            toePositionDistance = (image_height-footHeight)-previousToePosition
+            if(personHeight>100):
+                if(footHeight<thresholdSleepLimit and kneeHeight<thresholdSleepLimit):
+                    print("I am sleepinggggggggg")
+                    isSleepMode=True
+                else:
+                    isSleepMode=False
+                
 
+            # if(index%3==0):
+            #     previousToePosition=image_height-footHeight
+            #     print("*************************************")
+            #     print(index)
+            #     print(previousToePosition)
             
-            if(kneeToToe-toePositionDistance<10 and personHeight>150):
-                print("i am sleeeeeeeeeeeeeeepingggg")
-                isSleepMode=True
-            elif(personHeight>150):
-                isSleepMode=False
+            # index=index+1
+
+            # toePositionDistance = (image_height-footHeight)-previousToePosition
+           
+            
+            # if(kneeToToe-toePositionDistance<15 and personHeight>100):
+            #     print("i am sleeeeeeeeeeeeeeepingggg")
+            #     isSleepMode=True
+            # elif(personHeight>150):
+            #     isSleepMode=False
             
             # if(isSleepMode==False):
                 # print("++++++++++++++++++++++++++++++++++++++++++++")
@@ -168,17 +210,28 @@ with mp_pose.Pose(
             
 
             
-            if(isSleepMode==False and personHeight>150):
+            
+            
+            
+           
+
+            
+            if(isSleepMode==False and personHeight>100):
                 isFall = detect(foot=footHeight, knee=kneeHeight,
                             hip=hipsHeight, shoulder=shoulderHeight)
                 
 
             if(forceSkip & isFall):
-                
+                # print("****************COMPARINGGG*********************")
+                # print(kneeToToe)
+                # print
+                # print(kneeToToe-toePositionDistance)
 
                 forceSkip = False
                 cv2.imshow('1st detection', image)
                 print(' /////////// first call after detect /////////////////')
+                print('falling indexxx')
+                print(index)
 
                 # Create two threads as follows
                 try:
@@ -209,4 +262,6 @@ with mp_pose.Pose(
 
         cv2.imshow('MediaPipe Pose', image)
         if cv2.waitKey(5) & 0xFF == 27:
+            # plt.show()
+            print(len(kneePositions))
             break
