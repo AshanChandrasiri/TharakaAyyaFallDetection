@@ -19,11 +19,12 @@ def detect(foot, knee, hip, shoulder):
         return False
 
 
-def detectFallType(foot, knee, hip, shoulder):
+def detectFallType(foot, knee, hip, shoulder,index):
 
     difKneeHip = knee - hip
-
-    if(difKneeHip<-20):
+    print('************IDENTIFICATION************')
+    print(index)
+    if(difKneeHip< -20):
         print('Fallen on back')
         return 'Sitting Position'
         # sendPN('completely fallen')
